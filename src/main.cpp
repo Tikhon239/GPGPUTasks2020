@@ -42,10 +42,29 @@ int main()
 
     // TODO 1 По аналогии с предыдущим заданием узнайте какие есть устройства, и выберите из них какое-нибудь
     // (если в списке устройств есть хоть одна видеокарта - выберите ее, если нету - выбирайте процессор)
+    cl_uint platformsCount = 0;
+    OCL_SAFE_CALL(clGetPlatformIDs(0, nullptr, &platformsCount));
+    std::vector<cl_platform_id> platforms(platformsCount);
+    OCL_SAFE_CALL(clGetPlatformIDs(platformsCount, platforms.data(), nullptr));
+
     cl_platform_id platform;
-    OCL_SAFE_CALL(clGetPlatformIDs(1, &platform, nullptr));
     cl_device_id device;
-    OCL_SAFE_CALL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, nullptr));
+    bool gpu_flag = false;
+    for (int platformIndex = 0; platformIndex < platformsCount && !gpu_flag; ++platformIndex) {
+        platform = platforms[platformIndex];
+
+        cl_uint devicesCount = 0;
+        OCL_SAFE_CALL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, nullptr, &devicesCount));
+        std::vector<cl_device_id> platform_devices(devicesCount);
+        OCL_SAFE_CALL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, devicesCount, platform_devices.data(), nullptr));
+        for (int deviceIndex = 0; deviceIndex < devicesCount && !gpu_flag; ++deviceIndex) {
+            device = platform_devices[deviceIndex];
+            cl_device_type device_type;
+            clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(cl_device_type), &device_type, nullptr);
+            if (device_type == CL_DEVICE_TYPE_GPU)
+                gpu_flag = true;
+        }
+    }
 
     // TODO 2 Создайте контекст с выбранным устройством
     // См. документацию https://www.khronos.org/registry/OpenCL/sdk/1.2/docs/man/xhtml/ -> OpenCL Runtime -> Contexts -> clCreateContext
@@ -83,13 +102,13 @@ int main()
     // или же через метод Buffer Objects -> clEnqueueWriteBuffer
     // И хорошо бы сразу добавить в конце clReleaseMemObject (аналогично все дальнейшие ресурсы вроде OpenCL под-программы, кернела и т.п. тоже нужно освобождать)
     size_t buffer_size = n*sizeof(float);
-    cl_mem as_gpu = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, buffer_size, as.data(), &error);
+    cl_mem as_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, buffer_size, as.data(), &error);
     OCL_SAFE_CALL(error);
 
-    cl_mem bs_gpu = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, buffer_size, bs.data(), &error);
+    cl_mem bs_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, buffer_size, bs.data(), &error);
     OCL_SAFE_CALL(error);
 
-    cl_mem cs_gpu = clCreateBuffer(context, CL_MEM_WRITE_ONLY, buffer_size, nullptr, &error);
+    cl_mem cs_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, buffer_size, nullptr, &error);
     OCL_SAFE_CALL(error);
 
     // TODO 6 Выполните TODO 5 (реализуйте кернел в src/cl/aplusb.cl)
@@ -136,10 +155,10 @@ int main()
     // TODO 10 Выставите все аргументы в кернеле через clSetKernelArg (as_gpu, bs_gpu, cs_gpu и число значений, убедитесь что тип количества элементов такой же в кернеле)
     {
         unsigned int i = 0;
-        clSetKernelArg(kernel, i++, sizeof(cl_mem), &as_gpu);
-        clSetKernelArg(kernel, i++, sizeof(cl_mem), &bs_gpu);
-        clSetKernelArg(kernel, i++, sizeof(cl_mem), &cs_gpu);
-        clSetKernelArg(kernel, i++, sizeof(unsigned int), &n);
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem), &as_buffer));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem), &bs_buffer));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem), &cs_buffer));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(unsigned int), &n));
     }
 
     // TODO 11 Выше увеличьте n с 1000*1000 до 100*1000*1000 (чтобы дальнейшие замеры были ближе к реальности)
@@ -187,7 +206,7 @@ int main()
     {
         timer t;
         for (unsigned int i = 0; i < 20; ++i) {
-            OCL_SAFE_CALL(clEnqueueReadBuffer(commands, cs_gpu, CL_TRUE, 0, buffer_size, cs.data(), 0, nullptr, nullptr));
+            OCL_SAFE_CALL(clEnqueueReadBuffer(commands, cs_buffer, CL_TRUE, 0, buffer_size, cs.data(), 0, nullptr, nullptr));
             t.nextLap();
         }
         std::cout << "Result data transfer time: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
@@ -203,9 +222,9 @@ int main()
 
     OCL_SAFE_CALL(clReleaseContext(context));
     OCL_SAFE_CALL( clReleaseCommandQueue(commands));
-    OCL_SAFE_CALL(clReleaseMemObject(as_gpu));
-    OCL_SAFE_CALL(clReleaseMemObject(bs_gpu));
-    OCL_SAFE_CALL(clReleaseMemObject(cs_gpu));
+    OCL_SAFE_CALL(clReleaseMemObject(as_buffer));
+    OCL_SAFE_CALL(clReleaseMemObject(bs_buffer));
+    OCL_SAFE_CALL(clReleaseMemObject(cs_buffer));
     OCL_SAFE_CALL(clReleaseProgram(program));
     OCL_SAFE_CALL(clReleaseKernel(kernel));
 
