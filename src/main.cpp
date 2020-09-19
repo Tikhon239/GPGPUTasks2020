@@ -64,6 +64,7 @@ int main()
     OCL_SAFE_CALL(error);
 
     unsigned int n = 1000*1000;
+    n *= 100;
     // Создаем два массива псевдослучайных данных для сложения и массив для будущего хранения результата
     std::vector<float> as(n, 0);
     std::vector<float> bs(n, 0);
@@ -203,7 +204,7 @@ int main()
     OCL_SAFE_CALL(clReleaseContext(context));
     OCL_SAFE_CALL( clReleaseCommandQueue(commands));
     OCL_SAFE_CALL(clReleaseMemObject(as_gpu));
-    OCL_SAFE_CALL(clReleaseMemObject(as_gpu));
+    OCL_SAFE_CALL(clReleaseMemObject(bs_gpu));
     OCL_SAFE_CALL(clReleaseMemObject(cs_gpu));
     OCL_SAFE_CALL(clReleaseProgram(program));
     OCL_SAFE_CALL(clReleaseKernel(kernel));
