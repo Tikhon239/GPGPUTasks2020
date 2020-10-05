@@ -5,7 +5,7 @@
 #line 6
 
 __kernel void mandelbrot(__global float* results, const unsigned int width, const unsigned int height, float fromX, float fromY, float sizeX, float sizeY,
-        unsigned int iters, bool smoothing)
+        unsigned int iters, unsigned int smoothing)
 {
     // TODO если хочется избавиться от зернистости и дрожания при интерактивном погружении, добавьте anti-aliasing:
     // грубо говоря, при anti-aliasing уровня N вам нужно рассчитать не одно значение в центре пикселя, а N*N значений
