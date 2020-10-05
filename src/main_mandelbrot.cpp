@@ -105,7 +105,6 @@ int main(int argc, char **argv)
         renderToColor(cpu_results.ptr(), image.ptr(), width, height);
         image.savePNG("mandelbrot_cpu.png");
     }
-
     gpu::Context context;
     context.init(device.device_id_opencl);
     context.activate();
@@ -132,7 +131,10 @@ int main(int argc, char **argv)
 
         timer t;
         for (int i = 0; i < benchmarkingIters; ++i) {
-            mandelbrot.exec(gpu::WorkSize(workGroupSizeX, workGroupSizeY, global_work_size_x,  global_work_size_y), image_buffer, width, height,centralX - sizeX / 2.0f, centralY - sizeY / 2.0f, sizeX, sizeY, iterationsLimit, false);
+            std::printf("smth\n");
+            mandelbrot.exec(gpu::WorkSize(workGroupSizeX, workGroupSizeY, global_work_size_x,  global_work_size_y),
+                    image_buffer, width, height,centralX - sizeX / 2.0f, centralY - sizeY / 2.0f, sizeX, sizeY,
+                    iterationsLimit,static_cast<unsigned int>(false));
             image_buffer.readN(gpu_results.ptr(), width * height);
             t.nextLap();
         }
