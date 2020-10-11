@@ -57,5 +57,5 @@ __kernel void with_out_bank_conflict_matrix_transpose(__global const float* matr
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    matrix_transpose[(group_i * WORK_GROUP_SIZE + locala_j) * M + group_j * WORK_GROUP_SIZE + local_i] = local_matrix[local_i][local_j];
+    matrix_transpose[(group_i * WORK_GROUP_SIZE + local_j) * M + group_j * WORK_GROUP_SIZE + local_i] = local_matrix[local_i][local_j];
 }
