@@ -23,7 +23,7 @@ __kernel void matmull(__global const float* A, __global const float* B, __global
     C[j * N + i] = sum;
 }
 
-__kernel void matmull_with_transpose(__global const float* A, __global const float* B, __global float* C, const unsigned int M, const unsigned int K, const unsigned int N)
+__kernel void matmull_with_transpose(__global const float* A_T, __global const float* B, __global float* C, const unsigned int M, const unsigned int K, const unsigned int N)
 {
     const unsigned int i = get_global_id(0);
     const unsigned int j = get_global_id(1);
@@ -32,15 +32,15 @@ __kernel void matmull_with_transpose(__global const float* A, __global const flo
 
     float sum = 0;
     for (unsigned int k = 0; k < K; ++k) {
-        sum += A[j * K + k] * B[i * N + k];
+        sum += A_T[k * M + j] * B[k * N + i];
     }
 
     C[j * N + i] = sum;
 }
 __kernel void matrix_multiplication(__global const float* A, __global const float* B, __global float* C, const unsigned int M, const unsigned int K, const unsigned int N)
 {
-    __local float a_k[WORK_GROUP_SIZE][WORK_GROUP_SIZE];
-    __local float b_k[WORK_GROUP_SIZE][WORK_GROUP_SIZE];
+    __local float a_k[WORK_GROUP_SIZE][WORK_GROUP_SIZE + 1];
+    __local float b_k[WORK_GROUP_SIZE][WORK_GROUP_SIZE + 1];
 
     const unsigned int i = get_global_id(0);
     const unsigned int j = get_global_id(1);

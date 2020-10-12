@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     context.init(device.device_id_opencl);
     context.activate();
 
-    int benchmarkingIters = 10; // TODO пока тестируетесь удобно выставить единицу
+    int benchmarkingIters = 1; // TODO пока тестируетесь удобно выставить единицу
     unsigned int M = 1024;
     unsigned int K = 1024;
     unsigned int N = 1024;
@@ -60,10 +60,10 @@ int main(int argc, char **argv)
     const std::vector<float> cs_cpu_reference = cs;
 
 
-    gpu::gpu_mem_32f as_gpu, bs_gpu, bs_t_gpu, cs_gpu;
+    gpu::gpu_mem_32f as_gpu, as_t_gpu, bs_gpu, cs_gpu;
     as_gpu.resizeN(M*K);
+    as_t_gpu.resizeN(K*M);
     bs_gpu.resizeN(K*N);
-    bs_t_gpu.resizeN(N*K);
     cs_gpu.resizeN(M*N);
 
     as_gpu.writeN(as.data(), M*K);
@@ -116,8 +116,8 @@ int main(int argc, char **argv)
 
         timer t;
         for (int iter = 0; iter < benchmarkingIters; ++iter) {
-            matrix_transpose_kernel.exec(gpu::WorkSize(work_group_size_x, work_group_size_y, global_work_size_x,  global_work_size_y), bs_gpu, bs_t_gpu, K, N);
-            matrix_multiplication_kernel.exec(gpu::WorkSize(work_group_size_x, work_group_size_y, global_work_size_x,  global_work_size_y), as_gpu, bs_t_gpu, cs_gpu, M, K, N);
+            matrix_transpose_kernel.exec(gpu::WorkSize(work_group_size_x, work_group_size_y, global_work_size_x,  global_work_size_y), as_gpu, as_t_gpu, K, N);
+            matrix_multiplication_kernel.exec(gpu::WorkSize(work_group_size_x, work_group_size_y, global_work_size_x,  global_work_size_y), as_t_gpu, bs_gpu, cs_gpu, M, K, N);
             t.nextLap();
         }
         std::cout << "matmull with transpose GPU: " << t.lapAvg() << "+-" << t.lapStd() << " s" << std::endl;
