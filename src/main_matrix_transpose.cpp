@@ -89,8 +89,7 @@ int main(int argc, char **argv)
             float a = as[j * K + i];
             float b = as_t[i * M + j];
             if (a != b) {
-
-                std::cerr << "Not the same! " << j << " " << i << std::endl;
+                std::cerr << "Not the same! " << std::endl;
                 return 1;
             }
         }
