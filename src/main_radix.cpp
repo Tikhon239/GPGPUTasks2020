@@ -26,7 +26,6 @@ void raiseFail(const T &a, const T &b, std::string message, std::string filename
 
 int main(int argc, char **argv)
 {
-    argv[argc++] = "1";
     gpu::Device device = gpu::chooseGPUDevice(argc, argv);
 
     gpu::Context context;
