@@ -88,7 +88,7 @@ __kernel void local_radix(__global unsigned int* cur_as, __global unsigned int* 
         local_array[local_id] = 1 - (cur_as[global_id] >> bit) & 1;
     }
 
-    for (int pow = 0; pow < log2((float) WORK_GROUP_SIZE) + 1; ++pow) {
+    for (unsigned int pow = 0; pow <= log2((float) WORK_GROUP_SIZE); ++pow) {
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -100,8 +100,10 @@ __kernel void local_radix(__global unsigned int* cur_as, __global unsigned int* 
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        if (local_id % 2 == 0)
-            local_array[local_id / 2] = local_array[local_id] + local_array[local_id + 1];
+        if (local_id == 0) {
+            for (unsigned int i = 0; i < WORK_GROUP_SIZE / (1 << (pow + 1)); ++i)
+                local_array[i] = local_array[2 * i] + local_array[2 * i + 1];
+        }
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
